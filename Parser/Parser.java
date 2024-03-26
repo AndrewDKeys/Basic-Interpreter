@@ -45,8 +45,10 @@ public class Parser {
     }
 
     private StatementNode statement() {
-        var token = tokens.matchAndRemove(Token.TokenType.PRINT);
+        var token = tokens.matchAndRemove(Token.TokenType.LABEL);
         if(token.isPresent())
+            return new LabeledStatementNode(token.get().getValue(), statement()); //label holds a singular statement
+        else if(tokens.matchAndRemove(Token.TokenType.PRINT).isPresent())
             return printStatement();
         else if((token = tokens.matchAndRemove(Token.TokenType.WORD)).isPresent()) //If there is a word then it will always be a variable and therefore an assignment
             return assignment(token.get());
@@ -56,8 +58,50 @@ public class Parser {
             return read();
         else if(tokens.matchAndRemove(Token.TokenType.INPUT).isPresent())
             return input();
+        else if(tokens.matchAndRemove(Token.TokenType.GOSUB).isPresent())
+            return gosub();
+        else if(tokens.matchAndRemove(Token.TokenType.RETURN).isPresent())
+            return returnNode();
+        else if(tokens.matchAndRemove(Token.TokenType.END).isPresent())
+            return new EndNode();
+        else if(tokens.matchAndRemove(Token.TokenType.FOR).isPresent())
+            return forStatement();
+        else if(tokens.matchAndRemove(Token.TokenType.NEXT).isPresent())
+            return new NextNode();
         else
             return null; //not a valid statement
+    }
+
+    //Gosub must have only 1 other token on the line with it, and it must be a word token else it will return null
+    private GosubNode gosub() {
+        var token = tokens.matchAndRemove(Token.TokenType.WORD);
+        return token.map(value -> new GosubNode(value.getValue())).orElse(null);
+    }
+
+    //ReturnNode must be the only thing on the line, or else it is an invalid statement
+    private ReturnNode returnNode() {
+        return acceptSeparators() ? new ReturnNode() : null;
+    }
+
+    //adds in the header for a for statement
+    private ForNode forStatement() {
+        var variable = tokens.matchAndRemove(Token.TokenType.WORD);
+        if(variable.isPresent()) { //looking for the assignment at the beginning of a for loop
+            AssignmentNode initialize = assignment(variable.get());
+        } else {
+            return null;
+        }
+
+        int end;
+        variable = tokens.matchAndRemove(Token.TokenType.TO);
+        if(variable.isPresent()) {
+            variable = tokens.matchAndRemove(Token.TokenType.NUMBER);
+            if(variable.isPresent()) {
+                end = Integer.parseInt(variable.get().getValue());
+            }
+        }
+        //TODO FINISH
+        return null;
     }
 
     private PrintNode printStatement() {
