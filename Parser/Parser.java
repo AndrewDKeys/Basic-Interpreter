@@ -44,6 +44,7 @@ public class Parser {
         return new StatementListNode(nodeList);
     }
 
+    //Finds statements to return to the list or returns null
     private StatementNode statement() {
         var token = tokens.matchAndRemove(Token.TokenType.LABEL);
         if(token.isPresent())
@@ -68,8 +69,50 @@ public class Parser {
             return forStatement();
         else if(tokens.matchAndRemove(Token.TokenType.NEXT).isPresent())
             return new NextNode();
+        else if(tokens.matchAndRemove(Token.TokenType.END).isPresent())
+            return new EndNode();
+        else if(tokens.matchAndRemove(Token.TokenType.IF).isPresent())
+            return ifStatement();
+        else if(tokens.matchAndRemove(Token.TokenType.WHILE).isPresent())
+            return whileStatement();
         else
             return null; //not a valid statement
+    }
+
+    private BooleanNode booleanExpression() {
+        var left = expression(); //left sign of expression
+        var check = tokens.peek(0); //looks to see what the next operator is
+        Token.TokenType operator;
+        if(check.isPresent()) {
+            switch(check.get().getType()) {
+                case GREATERTHAN -> operator = Token.TokenType.GREATERTHAN;
+                case LESSTHAN -> operator = Token.TokenType.LESSTHAN;
+                case GREATERTHANEQUALS -> operator = Token.TokenType.GREATERTHANEQUALS;
+                case LESSTHANEQUALS -> operator = Token.TokenType.LESSTHANEQUALS;
+                case NOTEQUALS -> operator = Token.TokenType.NOTEQUALS;
+                default -> {return null;} // Not a valid operator
+            }
+        } else {
+            return null;
+        }
+        var right = expression(); //right side of expression
+        return new BooleanNode(left, right, operator);
+    }
+
+    private IfNode ifStatement() {
+        var condition = booleanExpression();
+        if(tokens.matchAndRemove(Token.TokenType.THEN).isPresent()) {
+            var label = tokens.matchAndRemove(Token.TokenType.LABEL);
+            return label.map(token -> new IfNode(condition, token.getValue())).orElse(null);
+        } else {
+            return null;
+        }
+    }
+
+    private WhileNode whileStatement() {
+        var condition = booleanExpression();
+        var label = tokens.matchAndRemove(Token.TokenType.WORD); // The label that will be associated with the end of the while loop
+        return label.map(token -> new WhileNode(condition, token.getValue())).orElse(null);
     }
 
     //Gosub must have only 1 other token on the line with it, and it must be a word token else it will return null
@@ -83,25 +126,42 @@ public class Parser {
         return acceptSeparators() ? new ReturnNode() : null;
     }
 
-    //adds in the header for a for statement
+    //adds in the header for a for statement, returns null if it is not a valid for initialization
     private ForNode forStatement() {
+        AssignmentNode initialize;
+        int end;
         var variable = tokens.matchAndRemove(Token.TokenType.WORD);
         if(variable.isPresent()) { //looking for the assignment at the beginning of a for loop
-            AssignmentNode initialize = assignment(variable.get());
+            initialize = assignment(variable.get());
         } else {
             return null;
         }
 
-        int end;
         variable = tokens.matchAndRemove(Token.TokenType.TO);
-        if(variable.isPresent()) {
+        if(variable.isPresent()) { //Looking for the end number of the loop
             variable = tokens.matchAndRemove(Token.TokenType.NUMBER);
             if(variable.isPresent()) {
                 end = Integer.parseInt(variable.get().getValue());
+            } else {
+                return null;
             }
+        } else {
+            return null;
         }
-        //TODO FINISH
-        return null;
+
+        variable = tokens.matchAndRemove(Token.TokenType.STEP);
+        if(variable.isPresent()) { //Looking to see if they added increment, this is optional
+            int increment;
+            variable = tokens.matchAndRemove(Token.TokenType.NUMBER);
+            if(variable.isPresent()) {
+                increment = Integer.parseInt(variable.get().getValue());
+                return new ForNode(increment, initialize, end);
+            } else {
+                return null;
+            }
+        } else {
+            return new ForNode(1, initialize, end); //1 is the default increment if it is not
+        }
     }
 
     private PrintNode printStatement() {
@@ -229,6 +289,8 @@ public class Parser {
     //Checks for any addition or subtraction, we start here in order to preserve PEMDAS
     private Node expression(){
         var left = term();
+        if(left == null)
+            return null;
         Optional<Token> addition;
         Optional<Token> subtract;
         if(tokens.moreTokens()) {
@@ -250,6 +312,8 @@ public class Parser {
     //Check for any multiplication or division, we recursively call term() to preserve PEMDAS for the right node
     private Node term() {
         var left = factor();
+        if(left == null)
+            return null;
         Optional<Token> multiply;
         Optional<Token> divide;
         if(tokens.moreTokens()) {
@@ -280,14 +344,14 @@ public class Parser {
             }
         } else if((L = tokens.matchAndRemove(Token.TokenType.WORD)).isPresent()) { //the number is a variable
             return new VariableNode(L.get().getValue());
-        } else if ((L = tokens.matchAndRemove(Token.TokenType.LPAREN)).isPresent()) {
+        } else if ((tokens.matchAndRemove(Token.TokenType.LPAREN)).isPresent()) {
             var expression = expression();
-            if ((L = tokens.matchAndRemove(Token.TokenType.RPAREN)).isEmpty()) {
+            if ((tokens.matchAndRemove(Token.TokenType.RPAREN)).isEmpty()) {
                 throw new ArithmeticException("No ending parenthesis");
             }
             return expression;
         } else {
-            throw new ArithmeticException("Not a number");
+            return null; // not a valid expression
         }
     }
 

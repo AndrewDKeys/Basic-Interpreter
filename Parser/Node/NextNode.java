@@ -4,6 +4,6 @@ public class NextNode  extends StatementNode {
 
     @Override
     public String toString() {
-        return null;
+        return "NEXT";
     }
 }

@@ -13,6 +13,7 @@ public class LabeledStatementNode extends StatementNode {
 
     @Override
     public String toString() {
-        return "LABEL(" + label + ", " + statement.toString() + ")";
+        String s = "LABEL(" + label + ", ";
+        return s + (statement != null ? statement + ")" : "endWhileLabel)");
     }
 }
