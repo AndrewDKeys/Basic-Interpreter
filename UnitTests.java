@@ -104,6 +104,17 @@ public class UnitTests {
     }
 
     @Test
+    public void testLexerFunctions() throws Exception {
+        File f = createFile("RANDOM()\nmid$(x$, 3, 10)");
+        LinkedList<Token> l = new Lexer().lex(f.getName());
+
+        //Testing function lex-ability
+        assertEquals("FUNCTION(RANDOM) ", l.get(0).toString());
+        assertEquals("RANDOM", l.get(0).getValue());
+        assertEquals(12, l.size());
+    }
+
+    @Test
     public void testTokenHandler() throws Exception {
         File f = createFile("1 + 2 * 3");
         var t = new TokenHandler(new Lexer().lex(f.getName()));
@@ -223,6 +234,19 @@ public class UnitTests {
 
         //Checking for correct parse
         assertEquals("WHILE(x LESSTHAN 5: endWhileLabel)", t.getList().get(0).toString());
+    }
+
+    @Test
+    public void testParserFunction() throws Exception {
+        File f = createFile("x = mid$(word$, num1, 2)\ny = random()");
+        var t = new Parser(new Lexer().lex(f.getName())).parse();
+
+        //testing that everything parsed correctly
+        assertEquals(2, t.getList().size());
+
+        //if the smallest and the biggest functions parse then the rest will also
+        assertEquals("x EQUALS mid$([word$, num1, 2])", t.getList().get(0).toString());
+        assertEquals("y EQUALS random([])", t.getList().get(1).toString());
     }
 
     public File createFile(String fileContent) throws IOException {

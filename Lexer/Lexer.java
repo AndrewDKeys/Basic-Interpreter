@@ -19,6 +19,8 @@ public class Lexer {
     // Symbols like '>=' '<=' '<>'
     private final HashMap<String, Token.TokenType> twoCharSymbols;
 
+    private final HashMap<String, Token.TokenType> knownFunctions;
+
     public Lexer() {
         lineNum = 0;
         charPosition = 0;
@@ -26,6 +28,7 @@ public class Lexer {
         knownWords = fillKnownWords();
         oneCharSymbols = fillOneCharSymbols();
         twoCharSymbols = fillTwoCharSymbols();
+        knownFunctions = fillKnownFunctions();
     }
 
     public LinkedList<Token> lex(String fileName) throws Exception {
@@ -89,7 +92,7 @@ public class Lexer {
                 value.append(file.getChar());
                 charPosition++;
                 return new Token(Token.TokenType.LABEL, lineNum, charPosition - value.length(), value.toString());
-            } else if (next == '_' || Character.isLetter(next) || Character.isDigit(next)) {
+            } else if(next == '_' || Character.isLetter(next) || Character.isDigit(next)) {
                 value.append(file.getChar());
                 charPosition++;
             } else { // Anything that doesn't belong in a word in BASIC
@@ -99,6 +102,8 @@ public class Lexer {
 
         if(knownWords.containsKey(value.toString().toLowerCase())) {
             return new Token(knownWords.get(value.toString().toLowerCase()), lineNum, charPosition - value.length());
+        } else if(knownFunctions.containsKey(value.toString().toLowerCase())) {
+            return new Token(Token.TokenType.FUNCTION, lineNum, charPosition - value.length(), value.toString());
         } else {
             return new Token(Token.TokenType.WORD, lineNum, charPosition - value.length(), value.toString());
         }
@@ -206,6 +211,18 @@ public class Lexer {
         m.put('/', Token.TokenType.DIVIDE);
         m.put('=', Token.TokenType.EQUALS);
         m.put(',', Token.TokenType.COMMA);
+        return m;
+    }
+
+    private HashMap<String, Token.TokenType> fillKnownFunctions() {
+        var m = new HashMap<String, Token.TokenType>();
+        m.put("random", Token.TokenType.FUNCTION);
+        m.put("left$", Token.TokenType.FUNCTION);
+        m.put("right$", Token.TokenType.FUNCTION);
+        m.put("mid$", Token.TokenType.FUNCTION);
+        m.put("num$", Token.TokenType.FUNCTION);
+        m.put("val", Token.TokenType.FUNCTION);
+        m.put("val% ", Token.TokenType.FUNCTION);
         return m;
     }
 }

@@ -278,6 +278,87 @@ public class Parser {
         return inputList;
     }
 
+    //checks for commas in the function invocation
+    private boolean checkComma() {
+        return tokens.matchAndRemove(Token.TokenType.COMMA).isPresent();
+    }
+
+    // Checks numbers for the function invocation method
+    private Node checkNumbers() {
+        Optional<Token> token;
+        if((token = tokens.matchAndRemove(Token.TokenType.NUMBER)).isPresent()) { // A number can either be a variable or a number
+            try {
+                return new IntegerNode(Integer.parseInt(token.get().getValue()));
+            } catch (NumberFormatException e) { //Try to convert the string to either a float or an int
+                return new FloatNode(Float.parseFloat(token.get().getValue()));
+            }
+        } else if((token = tokens.matchAndRemove(Token.TokenType.WORD)).isPresent()) {
+            return new VariableNode(token.get().getValue());
+        } else {
+            return null;
+        }
+    }
+
+    private FunctionNode functionInvocation(String function) {
+        if(function.equals("random")) {
+            if(tokens.matchAndRemove(Token.TokenType.LPAREN).isEmpty() | tokens.matchAndRemove(Token.TokenType.RPAREN).isEmpty())
+                return null; //Not valid function call
+            else
+                return new FunctionNode("random", new LinkedList<>()); //remove has no parameters
+        }
+
+        Optional<Token> token;
+        LinkedList<Node> parameters = new LinkedList<>();
+
+        if(function.equals("num$")) {
+            var num = checkNumbers();
+            if(num == null)
+                return null;
+            parameters.add(num);
+            if(tokens.matchAndRemove(Token.TokenType.RPAREN).isEmpty())
+                return null; //not a valid function call
+            return new FunctionNode(function, parameters);
+        }
+
+        if(tokens.matchAndRemove(Token.TokenType.LPAREN).isEmpty()) //A string can either be a literal or a variable
+            return null; //not a valid function call
+        if((token = tokens.matchAndRemove(Token.TokenType.WORD)).isPresent())
+            parameters.add(new VariableNode(token.get().getValue()));
+        else if((token = tokens.matchAndRemove(Token.TokenType.STRINGLITERAL)).isPresent())
+            parameters.add(new StringNode(token.get().getValue()));
+        else
+            return null;
+        if(function.equals("val") || function.equals("val%")) { //these functions have a singular string parameter
+            if(tokens.matchAndRemove(Token.TokenType.RPAREN).isEmpty())
+                return null;
+            return new FunctionNode(function, parameters);
+        }
+        if(!checkComma()) {return null;} //not a comma in between parameters
+
+        var num = checkNumbers();
+        if(num == null)
+            return null;
+        parameters.add(num);
+        if(function.equals("left$") || function.equals("right%")) { //these functions have 2 parameters
+            if(tokens.matchAndRemove(Token.TokenType.RPAREN).isEmpty())
+                return null;
+            return new FunctionNode(function, parameters);
+        }
+        if(!checkComma()) {return null;} //not a comma in between parameters
+
+        num = checkNumbers();
+        if(num == null)
+            return null;
+        parameters.add(num);
+        if(function.equals("mid$")) { //these functions have 2 parameters
+            if(tokens.matchAndRemove(Token.TokenType.RPAREN).isEmpty())
+                return null;
+            return new FunctionNode(function, parameters);
+        } else {
+            return null;
+        }
+    }
+
     private AssignmentNode assignment(Token variable) {
         var equals = tokens.matchAndRemove(Token.TokenType.EQUALS);
         if(equals.isPresent()) {
@@ -336,7 +417,11 @@ public class Parser {
     //Returns a Float or Integer node, check for parenthesis to make sure any expression inside parenthesis is done first
     //Throws error if there is not a number or there is no closed parenthesis
     private Node factor() {
-        var L = tokens.matchAndRemove(Token.TokenType.NUMBER);
+        var L = tokens.matchAndRemove(Token.TokenType.FUNCTION);
+        if(L.isPresent()) {
+            return functionInvocation(L.get().getValue());
+        }
+        L = tokens.matchAndRemove(Token.TokenType.NUMBER);
         if(L.isPresent()) { //if it is indeed a number
             try {
                 return new IntegerNode(Integer.parseInt(L.get().getValue()));
@@ -348,7 +433,7 @@ public class Parser {
         } else if ((tokens.matchAndRemove(Token.TokenType.LPAREN)).isPresent()) {
             var expression = expression();
             if ((tokens.matchAndRemove(Token.TokenType.RPAREN)).isEmpty()) {
-                throw new ArithmeticException("No ending parenthesis");
+                return null;
             }
             return expression;
         } else {
