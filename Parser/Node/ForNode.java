@@ -14,6 +14,14 @@ public class ForNode extends StatementNode {
         this.end = end;
     }
 
+    public int getIncrement() {
+        return increment;
+    }
+
+    public int getEnd() {
+        return end;
+    }
+
     @Override
     public String toString() {
         return "FOR(" + initialize.toString() + " TO " + end + ", " + increment + ")";

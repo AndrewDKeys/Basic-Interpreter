@@ -2,6 +2,9 @@ import static org.junit.Assert.*;
 
 import Lexer.*;
 import Parser.*;
+import Parser.Node.EndNode;
+import Parser.Node.IfNode;
+import Parser.Node.NextNode;
 import org.junit.Test;
 
 import java.io.File;
@@ -160,6 +163,66 @@ public class UnitTests {
 
         assertEquals(1, t.getList().size()); //Checks to see if second INPUT statement doesn't parse
         assertEquals("Parser.Node.Parser.Node.InputNode([Parser.Node.StringNode(Please Input), y, z]) ", t.toString());
+    }
+
+    @Test
+    public void testParserLabels() throws Exception {
+        File f = createFile("test: y = x + 3\nRETURN\nGOSUB test\nRETURN 7");
+        var t = new Parser(new Lexer().lex(f.getName())).parse();
+
+        //Testing to see if RETURN 7 doesn't parse
+        assertEquals(3, t.getList().size());
+
+        //Testing to see if labels work
+        assertEquals("LABEL(test:, y EQUALS Parser.Node.Parser.Node.MathOpNode(ADD, x, 3))" , t.getList().get(0).toString());
+        assertEquals("RETURN", t.getList().get(1).toString());
+        assertEquals("GOSUB(test)", t.getList().get(2).toString());
+    }
+
+    @Test
+    public void testParserFor() throws Exception{
+        File f = createFile("FOR i = 0 TO 100 STEP 10\nNEXT\nFOR j = 0 TO 100\nNEXT\nEND");
+        var t = new Parser(new Lexer().lex(f.getName())).parse();
+
+        // Testing to see if everything parses
+        assertEquals(5, t.getList().size());
+
+        //Testing For
+        assertEquals("FOR(i EQUALS 0 TO 100, 10)", t.getList().get(0).toString());
+
+        //Testing Next
+        assertTrue(t.getList().get(1) instanceof NextNode);
+
+        //Testing to see if default increment is 1
+        assertEquals("FOR(j EQUALS 0 TO 100, 1)", t.getList().get(2).toString());
+
+        //Testing End
+        assertTrue(t.getList().get(4) instanceof EndNode);
+    }
+
+    @Test
+    public void testParserIf() throws Exception {
+        File f = createFile("IF x < 7 THEN label\nIF x <> 10 then label\nIF x >= 20 THEN label\nIF x <= 2");
+        var t = new Parser(new Lexer().lex(f.getName())).parse();
+
+        // Testing to see if last line doesn't parse
+        assertEquals(3, t.getList().size());
+
+        assertEquals("IF(x LESSTHAN 7 THEN label)", t.getList().get(0).toString());
+        assertTrue(t.getList().get(1) instanceof IfNode);
+        assertEquals("IF(x GREATERTHANEQUALS 20 THEN label)", t.getList().get(2).toString());
+    }
+
+    @Test
+    public void testParserWhile() throws Exception {
+        File f = createFile("WHILE x < 5 endWhileLabel\nWHILE x <> 3");
+        var t = new Parser(new Lexer().lex(f.getName())).parse();
+
+        //Checking to see if final line doesn't parse
+        assertEquals(1, t.getList().size());
+
+        //Checking for correct parse
+        assertEquals("WHILE(x LESSTHAN 5: endWhileLabel)", t.getList().get(0).toString());
     }
 
     public File createFile(String fileContent) throws IOException {

@@ -13,6 +13,6 @@ public class WhileNode extends StatementNode {
 
     @Override
     public String toString() {
-        return "WHILE(" + condition.toString() + ": " + label.toString() + ")";
+        return "WHILE(" + condition.toString() + ": " + label + ")";
     }
 }

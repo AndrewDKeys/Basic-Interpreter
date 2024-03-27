@@ -95,6 +95,7 @@ public class Parser {
         } else {
             return null;
         }
+        tokens.matchAndRemove(operator);
         var right = expression(); //right side of expression
         return new BooleanNode(left, right, operator);
     }
@@ -102,7 +103,7 @@ public class Parser {
     private IfNode ifStatement() {
         var condition = booleanExpression();
         if(tokens.matchAndRemove(Token.TokenType.THEN).isPresent()) {
-            var label = tokens.matchAndRemove(Token.TokenType.LABEL);
+            var label = tokens.matchAndRemove(Token.TokenType.WORD);
             return label.map(token -> new IfNode(condition, token.getValue())).orElse(null);
         } else {
             return null;
@@ -111,7 +112,7 @@ public class Parser {
 
     private WhileNode whileStatement() {
         var condition = booleanExpression();
-        var label = tokens.matchAndRemove(Token.TokenType.WORD); // The label that will be associated with the end of the while loop
+        var label = tokens.matchAndRemove(Token.TokenType.WORD); // The end label of a while loop
         return label.map(token -> new WhileNode(condition, token.getValue())).orElse(null);
     }
 
