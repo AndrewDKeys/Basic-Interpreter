@@ -11,6 +11,10 @@ public class LabeledStatementNode extends StatementNode {
         this.statement = statement;
     }
 
+    public String getName() {
+        return label;
+    }
+
     @Override
     public String toString() {
         String s = "LABEL(" + label + ", ";

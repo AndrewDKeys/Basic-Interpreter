@@ -1,5 +1,6 @@
 import static org.junit.Assert.*;
 
+import Interpreter.Interpreter;
 import Lexer.*;
 import Parser.*;
 import Parser.Node.EndNode;
@@ -247,6 +248,27 @@ public class UnitTests {
         //if the smallest and the biggest functions parse then the rest will also
         assertEquals("x EQUALS mid$([word$, num1, 2])", t.getList().get(0).toString());
         assertEquals("y EQUALS random([])", t.getList().get(1).toString());
+    }
+
+
+    @Test
+    public void testInterpreterFunctions() throws Exception {
+        //testing left-function
+        assertEquals("test" ,Interpreter.left("testing", 4));
+
+        //testing right-function
+        assertEquals("ting" ,Interpreter.right("testing", 4));
+
+        //testing mid-function
+        assertEquals("esti", Interpreter.mid("testing", 1, 5));
+
+        //testing num
+        assertEquals("3", Interpreter.num(3));
+        assertEquals("3.002", Interpreter.num(3.002f));
+
+        //testing numVal
+        assertEquals(3, Interpreter.intVal("3"));
+        assertEquals(3.002, Interpreter.floatVal("3.002"), 0.05);
     }
 
     public File createFile(String fileContent) throws IOException {

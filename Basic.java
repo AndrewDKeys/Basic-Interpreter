@@ -1,3 +1,4 @@
+import Interpreter.Interpreter;
 import Lexer.Lexer;
 import Parser.Parser;
 
@@ -11,10 +12,12 @@ public class Basic {
         var list = lexer.lex(args[0]);
         for(var i: list)
             System.out.print(i);
-
         System.out.println();
 
         var parse = new Parser(list).parse();
         System.out.println(parse);
+
+        var interpreter = new Interpreter(parse);
+        System.out.println(interpreter);
     }
 }
