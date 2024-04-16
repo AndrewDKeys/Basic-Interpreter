@@ -28,6 +28,10 @@ public class MathOpNode extends Node {
         return right;
     }
 
+    public Token.TokenType getOperation() {
+        return operation;
+    }
+
     @Override
     public String toString() {
         return "Parser.Node.Parser.Node.MathOpNode(" + operation + ", " + left + ", " + right + ")";

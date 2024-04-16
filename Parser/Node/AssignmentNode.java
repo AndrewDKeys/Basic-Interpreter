@@ -15,6 +15,14 @@ public class AssignmentNode extends StatementNode {
         this.expression = expression;
     }
 
+    public VariableNode getVariable() {
+        return variable;
+    }
+
+    public Node getExpression() {
+        return expression;
+    }
+
     @Override
     public String toString() {
         return variable.toString() + " EQUALS " + expression.toString();
