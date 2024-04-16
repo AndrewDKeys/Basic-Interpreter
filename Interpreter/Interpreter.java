@@ -5,6 +5,7 @@ import Parser.Node.*;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Random;
+import java.util.Scanner;
 
 public class Interpreter {
 
@@ -171,7 +172,35 @@ public class Interpreter {
     }
 
     private void evaluateInput(InputNode node) {
-
+        Scanner getInput = new Scanner(System.in);
+        var inputList = node.getValue();
+        for(Node input : inputList) {
+           if(input instanceof StringNode) {
+               System.out.print(((StringNode) input).getValue());
+           } else if(input instanceof VariableNode) {
+               if(evaluateVariableType((VariableNode) input).equals("int")) {
+                   if(getInput.hasNextInt()) {
+                       intMap.put(input.toString(), getInput.nextInt());
+                   } else {
+                       throw new RuntimeException("Expected input int");
+                   }
+               } else if(evaluateVariableType((VariableNode) input).equals("float")) {
+                   if(getInput.hasNextFloat()) {
+                       floatMap.put(input.toString(), getInput.nextFloat());
+                   } else {
+                       throw new RuntimeException("Expected input float");
+                   }
+               } else {
+                   if(getInput.hasNext()) {
+                       stringMap.put(node.toString(), getInput.next());
+                   } else {
+                       throw new RuntimeException("Expected input string");
+                   }
+               }
+           } else {
+               throw new RuntimeException("Invalid input variables");
+           }
+        }
     }
 
     private void evaluatePrint(PrintNode node) {
@@ -185,9 +214,9 @@ public class Interpreter {
             } else if(node instanceof AssignmentNode) {
                 evaluateAssignment((AssignmentNode) node);
             } else if(node instanceof InputNode) {
-
+                evaluateInput((InputNode) node);
             } else if(node instanceof PrintNode) {
-
+                evaluatePrint((PrintNode) node);
             }
         }
     }
