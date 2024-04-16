@@ -239,15 +239,16 @@ public class UnitTests {
 
     @Test
     public void testParserFunction() throws Exception {
-        File f = createFile("x = mid$(word$, num1, 2)\ny = random()");
+        File f = createFile("x = mid$(word$, num1, 2)\ny = random()\nx = 2 + random()");
         var t = new Parser(new Lexer().lex(f.getName())).parse();
 
         //testing that everything parsed correctly
-        assertEquals(2, t.getList().size());
+        assertEquals(3, t.getList().size());
 
         //if the smallest and the biggest functions parse then the rest will also
         assertEquals("x EQUALS mid$([word$, num1, 2])", t.getList().get(0).toString());
         assertEquals("y EQUALS random([])", t.getList().get(1).toString());
+        assertEquals("x EQUALS Parser.Node.Parser.Node.MathOpNode(ADD, 2, random([]))", t.getList().get(2).toString());
     }
 
 

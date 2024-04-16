@@ -18,6 +18,6 @@ public class Basic {
         System.out.println(parse);
 
         var interpreter = new Interpreter(parse);
-        System.out.println(interpreter);
+        interpreter.interpret();
     }
 }
