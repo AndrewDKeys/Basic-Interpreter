@@ -3,15 +3,14 @@ import static org.junit.Assert.*;
 import Interpreter.Interpreter;
 import Lexer.*;
 import Parser.*;
-import Parser.Node.EndNode;
-import Parser.Node.IfNode;
-import Parser.Node.NextNode;
+import Parser.Node.*;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.LinkedList;
+import java.util.List;
 
 public class UnitTests {
 
@@ -270,6 +269,49 @@ public class UnitTests {
         //testing numVal
         assertEquals(3, Interpreter.intVal("3"));
         assertEquals(3.002, Interpreter.floatVal("3.002"), 0.05);
+    }
+
+    @Test
+    public void testInterpreterInput() throws Exception {
+        File f = createFile(" ");
+        var t = new Interpreter(new Parser(new Lexer().lex(f.getName())).parse());
+        var inputList = createInputList();
+
+        t.evaluateInput(new InputNode(createInputNode()), inputList);
+
+        assertEquals(0, inputList.size()); //If evaluateInput works correctly, all elements should have been removed and added to a hash map
+    }
+
+    @Test
+    public void testInterpreterPrint() throws Exception {
+        File f = createFile("sum = 0\nfloat% = 1.1\nPrint sum, float%");
+        var t = new Interpreter(new Parser(new Lexer().lex(f.getName())).parse());
+
+        var printed = t.evaluatePrint(new PrintNode(createInputList()), true); //boolean indicates that we are in test mode
+
+        assertEquals(2, printed.size());
+    }
+
+    public List<Node> createInputNode() {
+        var inputList = new LinkedList<Node>();
+
+        inputList.add(new StringNode("Please Input: "));
+        inputList.add(new VariableNode("integer"));
+        inputList.add(new VariableNode("float%"));
+        inputList.add(new VariableNode("string$"));
+
+        return inputList;
+    }
+
+    public LinkedList<Node> createInputList() {
+        var inputList = new LinkedList<Node>();
+
+        inputList.add(new StringNode("Please Input: "));
+        inputList.add(new IntegerNode(1));
+        inputList.add(new FloatNode(1.1f));
+        inputList.add(new StringNode("Banana Fish"));
+
+        return inputList;
     }
 
     public File createFile(String fileContent) throws IOException {

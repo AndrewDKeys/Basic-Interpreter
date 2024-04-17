@@ -176,25 +176,25 @@ public class Interpreter {
         var inputList = node.getValue();
         for(Node input : inputList) {
            if(input instanceof StringNode) {
-               System.out.print(((StringNode) input).getValue());
+               System.out.print(((StringNode) input).getValue()); //String literals are straight up printed
            } else if(input instanceof VariableNode) {
                if(evaluateVariableType((VariableNode) input).equals("int")) {
-                   if(getInput.hasNextInt()) {
+                   if(getInput.hasNextInt()) { //The next token has to be an int here
                        intMap.put(input.toString(), getInput.nextInt());
                    } else {
-                       throw new RuntimeException("Expected input int");
+                       throw new RuntimeException("Expected input int"); //There is a mismatch in variable types
                    }
                } else if(evaluateVariableType((VariableNode) input).equals("float")) {
-                   if(getInput.hasNextFloat()) {
+                   if(getInput.hasNextFloat()) { //The next token has to be a float here
                        floatMap.put(input.toString(), getInput.nextFloat());
                    } else {
-                       throw new RuntimeException("Expected input float");
+                       throw new RuntimeException("Expected input float"); //There is a mismatch in variable types
                    }
                } else {
-                   if(getInput.hasNext()) {
-                       stringMap.put(node.toString(), getInput.next());
+                   if(getInput.hasNext()) { //Assume the next token has to be a string
+                       stringMap.put(input.toString(), getInput.next());
                    } else {
-                       throw new RuntimeException("Expected input string");
+                       throw new RuntimeException("Expected input string"); //There is a mismatch in variable types
                    }
                }
            } else {
@@ -204,7 +204,80 @@ public class Interpreter {
     }
 
     private void evaluatePrint(PrintNode node) {
+        var printList = node.getList();
+        for(Node print : printList) {
+            if(print instanceof StringNode) {
+                System.out.print(((StringNode) print).getValue());
+            } else if(print instanceof VariableNode) {
+                var type = evaluateVariableType((VariableNode) print);
+                if(type.equals("int") & intMap.containsKey(print.toString())) {
+                    System.out.println(intMap.get(print.toString()));
+                } else if(type.equals("float") & floatMap.containsKey(print.toString())) {
+                    System.out.println(floatMap.get(print.toString()));
+                } else if(type.equals("string") & stringMap.containsKey(print.toString())) {
+                    System.out.println(stringMap.get(print.toString()));
+                } else {
+                    String exception = print + " not declared";
+                    throw new RuntimeException(exception); //Variable has not been assigned anything yet or doesn't exist
+                }
+            }
+        }
+    }
 
+    //THESE ARE ONLY TO BE USED BY THE UNIT TESTS
+    public void evaluateInput(InputNode node, LinkedList<Node> testList) {
+        var inputList = node.getValue();
+        for(Node input : inputList) {
+            if(input instanceof StringNode) {
+                System.out.print(((StringNode) input).getValue());
+            } else if(input instanceof VariableNode) {
+                if(evaluateVariableType((VariableNode) input).equals("int")) {
+                    if(testList.peek() instanceof IntegerNode) {
+                        intMap.put(input.toString(), ((IntegerNode) inputList).getValue());
+                    } else {
+                        throw new RuntimeException("Expected input int");
+                    }
+                } else if(evaluateVariableType((VariableNode) input).equals("float")) {
+                    if(testList.peek() instanceof FloatNode) {
+                        floatMap.put(input.toString(), ((FloatNode) inputList).getValue());
+                    } else {
+                        throw new RuntimeException("Expected input float");
+                    }
+                } else {
+                    if(testList.peek() instanceof StringNode) {
+                        stringMap.put(input.toString(), ((StringNode) inputList).getValue());
+                    } else {
+                        throw new RuntimeException("Expected input string");
+                    }
+                }
+            } else {
+                throw new RuntimeException("Invalid input variables");
+            }
+        }
+    }
+
+    //THESE ARE ONLY TO BE USED BY THE UNIT TESTS
+    public LinkedList<String> evaluatePrint(PrintNode node, boolean testMode) {
+        var printList = node.getList();
+        var printed = new LinkedList<String>();
+        for(Node print : printList) {
+            if(print instanceof StringNode) {
+                printed.add(((StringNode) print).getValue());
+            } else if(print instanceof VariableNode) {
+                var type = evaluateVariableType((VariableNode) print);
+                if(type.equals("int") & intMap.containsKey(print.toString())) {
+                    printed.add(intMap.get(print.toString()).toString());
+                } else if(type.equals("float") & floatMap.containsKey(print.toString())) {
+                    printed.add(floatMap.get(print.toString()).toString());
+                } else if(type.equals("string") & stringMap.containsKey(print.toString())) {
+                    printed.add(stringMap.get(print.toString()));
+                } else {
+                    String exception = print + " not declared";
+                    throw new RuntimeException(exception);
+                }
+            }
+        }
+        return printed;
     }
 
     public void interpret() {
