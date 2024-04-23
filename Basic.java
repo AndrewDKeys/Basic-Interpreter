@@ -14,5 +14,6 @@ public class Basic {
         var parse = new Parser(list).parse();
 
         var interpreter = new Interpreter(parse);
+        interpreter.run();
     }
 }

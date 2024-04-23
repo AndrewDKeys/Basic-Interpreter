@@ -6,11 +6,10 @@ import Parser.*;
 import Parser.Node.*;
 import org.junit.Test;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Scanner;
 
 public class UnitTests {
 
@@ -187,7 +186,7 @@ public class UnitTests {
         //Testing to see if labels work
         assertEquals("LABEL(test:, y EQUALS Parser.Node.Parser.Node.MathOpNode(ADD, x, 3))" , t.getList().get(0).toString());
         assertEquals("RETURN", t.getList().get(1).toString());
-        assertEquals("GOSUB(test)", t.getList().get(2).toString());
+        assertEquals("GOSUB(test:)", t.getList().get(2).toString());
     }
 
     @Test
@@ -219,9 +218,9 @@ public class UnitTests {
         // Testing to see if last line doesn't parse
         assertEquals(3, t.getList().size());
 
-        assertEquals("IF(x LESSTHAN 7 THEN label)", t.getList().get(0).toString());
+        assertEquals("IF(x LESSTHAN 7 THEN label:)", t.getList().get(0).toString());
         assertTrue(t.getList().get(1) instanceof IfNode);
-        assertEquals("IF(x GREATERTHANEQUALS 20 THEN label)", t.getList().get(2).toString());
+        assertEquals("IF(x GREATERTHANEQUALS 20 THEN label:)", t.getList().get(2).toString());
     }
 
     @Test
@@ -271,27 +270,49 @@ public class UnitTests {
         assertEquals(3.002, Interpreter.floatVal("3.002"), 0.05);
     }
 
-    public List<Node> createInputNode() {
-        var inputList = new LinkedList<Node>();
+    @Test
+    public void testFizzBuzz() throws Exception {
+        File f = createFile("FOR i = 1 TO 15\n" + //this is essentially the well known FizzBuzz problem
+                "IF 3*(i/3) > i-1 THEN fizz\n" +
+                "IF 5*(i/5) > i-1 THEN buzz\n" +
+                "NEXT\n" +
+                "END\n" +
+                "fizz: PRINT \"Fizz\"\n" +
+                "RETURN\n" +
+                "buzz: PRINT \"Buzz\"\n" +
+                "RETURN");
 
-        inputList.add(new StringNode("Please Input: "));
-        inputList.add(new VariableNode("integer"));
-        inputList.add(new VariableNode("float%"));
-        inputList.add(new VariableNode("string$"));
+        var printedStream = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(printedStream)); //makes it so everything is printed to this local stream
 
-        return inputList;
+        new Interpreter(new Parser(new Lexer().lex(f.getName())).parse()).run(); //runs the code
+
+        assertEquals("Fizz\r\nBuzz\r\nFizz\r\nFizz\r\nBuzz\r\nFizz\r\n", printedStream.toString());
+
+        System.setOut(System.out);
     }
 
-    public LinkedList<Node> createInputList() {
-        var inputList = new LinkedList<Node>();
+    @Test
+    public void testClassAverage() throws Exception {
+        File f = createFile("READ a%, b%, c%, d%, e%, f%, g%\n" +
+                "GOSUB sum\n" +
+                "average% = average% / 7.0\n" +
+                "PRINT \"Class Average: \", average%\n" +
+                "END\n" +
+                "DATA 33.4, 84.2, 89.4, 83.6, 78.0, 94.02, 88.0\n" +
+                "sum: average% = ((a% + b%) + (c% + d%)) + ((e% + f%) + g%)\n" +
+                "RETURN");
 
-        inputList.add(new StringNode("Please Input: "));
-        inputList.add(new IntegerNode(1));
-        inputList.add(new FloatNode(1.1f));
-        inputList.add(new StringNode("Banana Fish"));
+        var printedStream = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(printedStream)); //makes it so everything is printed to this local stream
 
-        return inputList;
+        new Interpreter(new Parser(new Lexer().lex(f.getName())).parse()).run(); //runs the code
+
+        assertEquals("Class Average: \r\n78.659996\r\n", printedStream.toString());
+
+        System.setOut(System.out);
     }
+
 
     public File createFile(String fileContent) throws IOException {
         File f = new File("testData.txt");

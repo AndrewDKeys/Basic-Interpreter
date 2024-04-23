@@ -30,7 +30,7 @@ public class Interpreter {
     private StatementNode currentStatement;
 
     //Stack will be used to go back and forth in code
-    private Stack<StatementNode> statementStack;
+    private final Stack<StatementNode> statementStack;
 
     public Interpreter(StatementListNode statementList) {
         this.statementList = statementList;
@@ -259,7 +259,7 @@ public class Interpreter {
         var printList = node.getList();
         for(Node print : printList) {
             if(print instanceof StringNode) {
-                System.out.print(((StringNode) print).getValue());
+                System.out.println(((StringNode) print).getValue());
             } else if(print instanceof VariableNode) {
                 var type = evaluateVariableType((VariableNode) print);
                 if(type.equals("int") & intMap.containsKey(print.toString())) {
@@ -291,7 +291,8 @@ public class Interpreter {
         if(!intMap.containsKey(variable)) { //looks to see if we are on the first iteration or not
             evaluateAssignment(node.getInitialize());
         } else {
-            intMap.put(variable, intMap.get(variable) + node.getIncrement()); //increments the variable by the given step
+            int value = intMap.get(variable) + node.getIncrement();
+            intMap.replace(variable, value); //increments the variable by the given step
         }
 
         //checking to see if we should end the for loop or continue another iteration
@@ -305,31 +306,21 @@ public class Interpreter {
     }
 
     private void evaluateGosub(GosubNode node) {
-        statementStack.push(node.next());
-        currentStatement = gosubMap.get(node.getIdentifier());
+        if(gosubMap.containsKey(node.getIdentifier())) {
+            interpret(gosubMap.get(node.getIdentifier()).getStatement());
+        } else {
+            throw new RuntimeException("Label does not exist");
+        }
     }
 
     private boolean evaluateBoolean(BooleanNode node) {
-        if(node.getLeft() instanceof IntegerNode && node.getRight() instanceof IntegerNode) { // both sides of the comparison need to be the same type
-            switch (node.getOperator()) {
-                case LESSTHAN -> {return evaluateInt(node.getLeft()) < evaluateInt(node.getRight());}
-                case LESSTHANEQUALS -> {return evaluateInt(node.getLeft()) <= evaluateInt(node.getRight());}
-                case GREATERTHAN -> {return evaluateInt(node.getLeft()) > evaluateInt(node.getRight());}
-                case GREATERTHANEQUALS -> {return evaluateInt(node.getLeft()) >= evaluateInt(node.getRight());}
-                case NOTEQUALS -> {return evaluateInt(node.getLeft()) != evaluateInt(node.getRight());}
-                default -> throw new RuntimeException("Invalid comparison operator");
-            }
-        } else if(node.getLeft() instanceof FloatNode && node.getRight() instanceof FloatNode) { // both sides of the comparison need to be the same type
-            switch (node.getOperator()) {
-                case LESSTHAN -> {return evaluateFloat(node.getLeft()) < evaluateFloat(node.getRight());}
-                case LESSTHANEQUALS -> {return evaluateFloat(node.getLeft()) <= evaluateFloat(node.getRight());}
-                case GREATERTHAN -> {return evaluateFloat(node.getLeft()) > evaluateFloat(node.getRight());}
-                case GREATERTHANEQUALS -> {return evaluateFloat(node.getLeft()) >= evaluateFloat(node.getRight());}
-                case NOTEQUALS -> {return evaluateFloat(node.getLeft()) != evaluateFloat(node.getRight());}
-                default -> throw new RuntimeException("Invalid comparison operator");
-            }
-        } else {
-            throw new RuntimeException("Comparison between variables not of the same type");
+        switch (node.getOperator()) {
+            case LESSTHAN -> {return evaluateInt(node.getLeft()) < evaluateInt(node.getRight());}
+            case LESSTHANEQUALS -> {return evaluateInt(node.getLeft()) <= evaluateInt(node.getRight());}
+            case GREATERTHAN -> {return evaluateInt(node.getLeft()) > evaluateInt(node.getRight());}
+            case GREATERTHANEQUALS -> {return evaluateInt(node.getLeft()) >= evaluateInt(node.getRight());}
+            case NOTEQUALS -> {return evaluateInt(node.getLeft()) != evaluateInt(node.getRight());}
+            default -> throw new RuntimeException("Invalid comparison operator");
         }
     }
 
@@ -351,6 +342,7 @@ public class Interpreter {
             evaluateGosub((GosubNode) node);
         } else if(node instanceof NextNode) {
             currentStatement = statementStack.pop(); //sets currentStatement to the beginning of the for loop
+            interpret(currentStatement); //immediately reinterpret or else it will pass the loop
         } else if(node instanceof ReturnNode) {
             currentStatement = statementStack.pop(); //sets currentStatement back to gosub call
         } else if(node instanceof EndNode) {
@@ -363,7 +355,7 @@ public class Interpreter {
     //runs the code
     public void run() {
         currentStatement = (StatementNode) statementList.getList().getFirst();
-        while(!end || currentStatement != null) {
+        while(!end && currentStatement != null) { //if either is false, end the program
             interpret(currentStatement);
             currentStatement = currentStatement.next();
         }

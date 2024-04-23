@@ -104,7 +104,7 @@ public class Parser {
         var condition = booleanExpression();
         if(tokens.matchAndRemove(Token.TokenType.THEN).isPresent()) {
             var label = tokens.matchAndRemove(Token.TokenType.WORD);
-            return label.map(token -> new IfNode(condition, token.getValue())).orElse(null);
+            return label.map(token -> new IfNode(condition, token.getValue() + ":")).orElse(null);
         } else {
             return null;
         }
@@ -119,7 +119,7 @@ public class Parser {
     //Gosub must have only 1 other token on the line with it, and it must be a word token else it will return null
     private GosubNode gosub() {
         var token = tokens.matchAndRemove(Token.TokenType.WORD);
-        return token.map(value -> new GosubNode(value.getValue())).orElse(null);
+        return token.map(value -> new GosubNode(value.getValue() + ":")).orElse(null);
     }
 
     //ReturnNode must be the only thing on the line, or else it is an invalid statement
@@ -364,7 +364,7 @@ public class Parser {
         if(equals.isPresent()) {
             return new AssignmentNode(new VariableNode(variable.getValue()), expression());
         } else {
-            return null; //not a valid assignment
+            throw new RuntimeException("Invalid assignment");
         }
     }
 
@@ -433,11 +433,11 @@ public class Parser {
         } else if ((tokens.matchAndRemove(Token.TokenType.LPAREN)).isPresent()) {
             var expression = expression();
             if ((tokens.matchAndRemove(Token.TokenType.RPAREN)).isEmpty()) {
-                return null;
+                throw new RuntimeException("Not a valid expression");
             }
             return expression;
         } else {
-            return null; // not a valid expression
+            throw new RuntimeException("Not a valid expression");
         }
     }
 
