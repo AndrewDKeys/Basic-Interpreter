@@ -18,6 +18,10 @@ public class FunctionNode extends Node {
         return functionName;
     }
 
+    public List<Node> getParameters() {
+        return parameters;
+    }
+
     @Override
     public String toString() {
         return functionName + "(" + parameters.toString() + ")";

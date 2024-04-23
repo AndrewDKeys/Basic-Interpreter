@@ -81,6 +81,9 @@ public class Interpreter {
         } else if (node instanceof FunctionNode) {
             if(((FunctionNode) node).getFunctionName().equals("random")) { //this is the only function that can return an integer
                 return random();
+            } else if(((FunctionNode) node).getFunctionName().equals("val")) {
+                Node params = ((FunctionNode) node).getParameters().getFirst();
+                return intVal(evaluateString(params));
             } else {
                 throw new RuntimeException("Invalid integer variable assignment");
             }
@@ -93,14 +96,29 @@ public class Interpreter {
         if(node instanceof FloatNode) {
             return ((FloatNode) node).getValue();
         } else if(node instanceof MathOpNode) {
-
-            return 0;
+            float left = evaluateFloat(((MathOpNode) node).getLeft()); //recursively get int value
+            float right = evaluateFloat(((MathOpNode) node).getRight()); //recursively get int value
+            var operation = ((MathOpNode) node).getOperation();
+            switch(operation) {
+                case ADD -> { return left + right; }
+                case SUBTRACT -> { return left - right; }
+                case DIVIDE -> { return left / right; }
+                case MULTIPLY -> { return left * right; }
+                default -> throw new RuntimeException("Invalid math operator");
+            }
         } else if(node instanceof VariableNode) {
-
-            return 0;
+            if(floatMap.containsKey(node.toString())) {
+                return floatMap.get(node.toString());
+            } else {
+                throw new RuntimeException("Use of unassigned variable"); //while all variables are global, they have to be assigned
+            }
         } else if (node instanceof FunctionNode) {
-
-            return 0;
+            if(((FunctionNode) node).getFunctionName().equals("val%")) { //val% is the only built-in that returns a float
+                Node params = ((FunctionNode) node).getParameters().getFirst();
+                return floatVal(evaluateString(params));
+            } else {
+                throw new RuntimeException("Invalid float variable assignment");
+            }
         } else {
             throw new RuntimeException("Invalid float variable assignment");
         }
@@ -110,17 +128,34 @@ public class Interpreter {
         if(node instanceof StringNode) {
             return ((StringNode) node).getValue();
         } else if(node instanceof VariableNode) {
-
-            return null;
+            if(stringMap.containsKey(node.toString())) {
+                return stringMap.get(node.toString());
+            } else {
+                throw new RuntimeException("Use of unassigned variable"); //while all variables are global, they have to be assigned
+            }
         } else if(node instanceof FunctionNode) {
-
-            return null;
+            var params = ((FunctionNode) node).getParameters(); //The types for the parameters were already checked in the parser
+            if(((FunctionNode) node).getFunctionName().equals("left$")) {
+                return left(evaluateString(params.get(0)), evaluateInt(params.get(1)));
+            } else if(((FunctionNode) node).getFunctionName().equals("right$")) {
+                return right(evaluateString(params.get(0)), evaluateInt(params.get(1)));
+            } else if(((FunctionNode) node).getFunctionName().equals("mid$")) {
+                return mid(evaluateString(params.get(0)), evaluateInt(params.get(1)), evaluateInt(params.get(2)));
+            } else if(((FunctionNode) node).getFunctionName().equals("num$")) {
+                try {
+                    return num(evaluateInt(params.getFirst())); //trys to see if it wants to convert an int
+                } catch(Exception e) {
+                    return num(evaluateFloat(params.getFirst())); //else they would want to convert a float
+                }
+            } else {
+                throw new RuntimeException("Invalid string variable assignment");
+            }
         } else {
             throw new RuntimeException("Invalid string variable assignment");
         }
     }
 
-    //returns the type of a variable i.e. String, int, float
+    //returns the type of variable i.e. String, int, float
     private String evaluateVariableType(VariableNode node) {
         char type = node.toString().charAt(node.toString().length() - 1); //the last character of a variable signifies its type
         switch(type) {
@@ -222,62 +257,6 @@ public class Interpreter {
                 }
             }
         }
-    }
-
-    //THESE ARE ONLY TO BE USED BY THE UNIT TESTS
-    public void evaluateInput(InputNode node, LinkedList<Node> testList) {
-        var inputList = node.getValue();
-        for(Node input : inputList) {
-            if(input instanceof StringNode) {
-                System.out.print(((StringNode) input).getValue());
-            } else if(input instanceof VariableNode) {
-                if(evaluateVariableType((VariableNode) input).equals("int")) {
-                    if(testList.peek() instanceof IntegerNode) {
-                        intMap.put(input.toString(), ((IntegerNode) inputList).getValue());
-                    } else {
-                        throw new RuntimeException("Expected input int");
-                    }
-                } else if(evaluateVariableType((VariableNode) input).equals("float")) {
-                    if(testList.peek() instanceof FloatNode) {
-                        floatMap.put(input.toString(), ((FloatNode) inputList).getValue());
-                    } else {
-                        throw new RuntimeException("Expected input float");
-                    }
-                } else {
-                    if(testList.peek() instanceof StringNode) {
-                        stringMap.put(input.toString(), ((StringNode) inputList).getValue());
-                    } else {
-                        throw new RuntimeException("Expected input string");
-                    }
-                }
-            } else {
-                throw new RuntimeException("Invalid input variables");
-            }
-        }
-    }
-
-    //THESE ARE ONLY TO BE USED BY THE UNIT TESTS
-    public LinkedList<String> evaluatePrint(PrintNode node, boolean testMode) {
-        var printList = node.getList();
-        var printed = new LinkedList<String>();
-        for(Node print : printList) {
-            if(print instanceof StringNode) {
-                printed.add(((StringNode) print).getValue());
-            } else if(print instanceof VariableNode) {
-                var type = evaluateVariableType((VariableNode) print);
-                if(type.equals("int") & intMap.containsKey(print.toString())) {
-                    printed.add(intMap.get(print.toString()).toString());
-                } else if(type.equals("float") & floatMap.containsKey(print.toString())) {
-                    printed.add(floatMap.get(print.toString()).toString());
-                } else if(type.equals("string") & stringMap.containsKey(print.toString())) {
-                    printed.add(stringMap.get(print.toString()));
-                } else {
-                    String exception = print + " not declared";
-                    throw new RuntimeException(exception);
-                }
-            }
-        }
-        return printed;
     }
 
     public void interpret() {

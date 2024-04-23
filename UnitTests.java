@@ -271,27 +271,6 @@ public class UnitTests {
         assertEquals(3.002, Interpreter.floatVal("3.002"), 0.05);
     }
 
-    @Test
-    public void testInterpreterInput() throws Exception {
-        File f = createFile(" ");
-        var t = new Interpreter(new Parser(new Lexer().lex(f.getName())).parse());
-        var inputList = createInputList();
-
-        t.evaluateInput(new InputNode(createInputNode()), inputList);
-
-        assertEquals(0, inputList.size()); //If evaluateInput works correctly, all elements should have been removed and added to a hash map
-    }
-
-    @Test
-    public void testInterpreterPrint() throws Exception {
-        File f = createFile("sum = 0\nfloat% = 1.1\nPrint sum, float%");
-        var t = new Interpreter(new Parser(new Lexer().lex(f.getName())).parse());
-
-        var printed = t.evaluatePrint(new PrintNode(createInputList()), true); //boolean indicates that we are in test mode
-
-        assertEquals(2, printed.size());
-    }
-
     public List<Node> createInputNode() {
         var inputList = new LinkedList<Node>();
 
