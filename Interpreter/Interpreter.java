@@ -2,10 +2,7 @@ package Interpreter;
 
 import Parser.Node.*;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Random;
-import java.util.Scanner;
+import java.util.*;
 
 public class Interpreter {
 
@@ -25,6 +22,15 @@ public class Interpreter {
 
     //Maps variable strings to their value
     private final HashMap<String, String> stringMap;
+
+    //tells us whether we have encountered an end node
+    private boolean end = false;
+
+    //The statement we are currently interpreting
+    private StatementNode currentStatement;
+
+    //Stack will be used to go back and forth in code
+    private Stack<StatementNode> statementStack;
 
     public Interpreter(StatementListNode statementList) {
         this.statementList = statementList;
@@ -259,17 +265,23 @@ public class Interpreter {
         }
     }
 
-    public void interpret() {
-        for(Node node : statementList.getList()) {
-            if(node instanceof ReadNode) {
-                evaluateRead((ReadNode) node);
-            } else if(node instanceof AssignmentNode) {
-                evaluateAssignment((AssignmentNode) node);
-            } else if(node instanceof InputNode) {
-                evaluateInput((InputNode) node);
-            } else if(node instanceof PrintNode) {
-                evaluatePrint((PrintNode) node);
-            }
+    //interprets the current statement
+    private void interpret(StatementNode node) {
+        if(node instanceof ReadNode) {
+            evaluateRead((ReadNode) node);
+        } else if(node instanceof AssignmentNode) {
+            evaluateAssignment((AssignmentNode) node);
+        } else if(node instanceof InputNode) {
+            evaluateInput((InputNode) node);
+        } else if(node instanceof PrintNode) {
+            evaluatePrint((PrintNode) node);
+        }
+    }
+
+    //runs the code
+    public void run() {
+        while(!end) {
+
         }
     }
 
