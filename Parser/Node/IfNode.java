@@ -14,6 +14,14 @@ public class IfNode extends StatementNode {
         this.label = label;
     }
 
+    public BooleanNode getCondition() {
+        return condition;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
     public void setNext(StatementNode next) {
         this.next = next;
     }

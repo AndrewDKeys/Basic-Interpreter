@@ -17,6 +17,18 @@ public class BooleanNode extends Node {
         this.operator = operator;
     }
 
+    public Token.TokenType getOperator() {
+        return operator;
+    }
+
+    public Node getRight() {
+        return right;
+    }
+
+    public Node getLeft() {
+        return left;
+    }
+
     @Override
     public String toString() {
         return left.toString() + " " + operator + " " + right.toString();

@@ -210,7 +210,6 @@ public class Interpreter {
                 }
             }
         }
-        statementStack.push(node);
     }
 
     private void evaluateAssignment(AssignmentNode node) {
@@ -222,7 +221,6 @@ public class Interpreter {
         } else {
             stringMap.put(node.getVariable().toString(), evaluateString(node.getExpression())); //updating or adding the variable
         }
-        statementStack.push(node);
     }
 
     private void evaluateInput(InputNode node) {
@@ -255,7 +253,6 @@ public class Interpreter {
                throw new RuntimeException("Invalid input variables");
            }
         }
-        statementStack.push(node);
     }
 
     private void evaluatePrint(PrintNode node) {
@@ -277,31 +274,63 @@ public class Interpreter {
                 }
             }
         }
-        statementStack.push(node);
     }
 
     private void evaluateIf(IfNode node) {
-
+        if(evaluateBoolean(node.getCondition())) { //skip over the node if it is false
+            if(gosubMap.containsKey(node.getLabel())) {
+                interpret(gosubMap.get(node.getLabel()).getStatement());
+            } else {
+                throw new RuntimeException("Label does not exist");
+            }
+        }
     }
 
     private void evaluateFor(ForNode node) {
+        String variable = node.getInitialize().getVariable().toString(); //gets the name of the variable that the loop is incrementing
+        if(!intMap.containsKey(variable)) { //looks to see if we are on the first iteration or not
+            evaluateAssignment(node.getInitialize());
+        } else {
+            intMap.put(variable, intMap.get(variable) + node.getIncrement()); //increments the variable by the given step
+        }
 
+        //checking to see if we should end the for loop or continue another iteration
+        if(intMap.get(variable) >= node.getEnd()) {
+            while(!(currentStatement instanceof NextNode)) {
+                currentStatement = currentStatement.next();
+            }
+        } else {
+            statementStack.push(node); //marking the beginning of the for loop
+        }
     }
 
     private void evaluateGosub(GosubNode node) {
-
+        statementStack.push(node.next());
+        currentStatement = gosubMap.get(node.getIdentifier());
     }
 
-    private void evaluateReturn(ReturnNode node) {
-
-    }
-
-    private void evaluateNext(NextNode node) {
-
-    }
-
-    private void evaluateBoolean(BooleanNode node) {
-
+    private boolean evaluateBoolean(BooleanNode node) {
+        if(node.getLeft() instanceof IntegerNode && node.getRight() instanceof IntegerNode) { // both sides of the comparison need to be the same type
+            switch (node.getOperator()) {
+                case LESSTHAN -> {return evaluateInt(node.getLeft()) < evaluateInt(node.getRight());}
+                case LESSTHANEQUALS -> {return evaluateInt(node.getLeft()) <= evaluateInt(node.getRight());}
+                case GREATERTHAN -> {return evaluateInt(node.getLeft()) > evaluateInt(node.getRight());}
+                case GREATERTHANEQUALS -> {return evaluateInt(node.getLeft()) >= evaluateInt(node.getRight());}
+                case NOTEQUALS -> {return evaluateInt(node.getLeft()) != evaluateInt(node.getRight());}
+                default -> throw new RuntimeException("Invalid comparison operator");
+            }
+        } else if(node.getLeft() instanceof FloatNode && node.getRight() instanceof FloatNode) { // both sides of the comparison need to be the same type
+            switch (node.getOperator()) {
+                case LESSTHAN -> {return evaluateFloat(node.getLeft()) < evaluateFloat(node.getRight());}
+                case LESSTHANEQUALS -> {return evaluateFloat(node.getLeft()) <= evaluateFloat(node.getRight());}
+                case GREATERTHAN -> {return evaluateFloat(node.getLeft()) > evaluateFloat(node.getRight());}
+                case GREATERTHANEQUALS -> {return evaluateFloat(node.getLeft()) >= evaluateFloat(node.getRight());}
+                case NOTEQUALS -> {return evaluateFloat(node.getLeft()) != evaluateFloat(node.getRight());}
+                default -> throw new RuntimeException("Invalid comparison operator");
+            }
+        } else {
+            throw new RuntimeException("Comparison between variables not of the same type");
+        }
     }
 
     //interprets the current statement
@@ -320,10 +349,10 @@ public class Interpreter {
             evaluateFor((ForNode) node);
         } else if(node instanceof GosubNode) {
             evaluateGosub((GosubNode) node);
-        } else if(node instanceof ReturnNode) {
-            evaluateReturn((ReturnNode) node);
         } else if(node instanceof NextNode) {
-            evaluateNext((NextNode) node);
+            currentStatement = statementStack.pop(); //sets currentStatement to the beginning of the for loop
+        } else if(node instanceof ReturnNode) {
+            currentStatement = statementStack.pop(); //sets currentStatement back to gosub call
         } else if(node instanceof EndNode) {
             end = true;
         } else {
@@ -334,7 +363,7 @@ public class Interpreter {
     //runs the code
     public void run() {
         currentStatement = (StatementNode) statementList.getList().getFirst();
-        while(!end) {
+        while(!end || currentStatement != null) {
             interpret(currentStatement);
             currentStatement = currentStatement.next();
         }

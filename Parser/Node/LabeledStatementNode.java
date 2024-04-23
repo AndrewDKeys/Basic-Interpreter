@@ -17,6 +17,10 @@ public class LabeledStatementNode extends StatementNode {
         return label;
     }
 
+    public StatementNode getStatement() {
+        return statement;
+    }
+
     public void setNext(StatementNode next) {
         this.next = next;
     }

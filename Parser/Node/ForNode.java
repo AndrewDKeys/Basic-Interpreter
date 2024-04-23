@@ -24,6 +24,10 @@ public class ForNode extends StatementNode {
         return end;
     }
 
+    public AssignmentNode getInitialize() {
+        return initialize;
+    }
+
     public void setNext(StatementNode next) {
         this.next = next;
     }
