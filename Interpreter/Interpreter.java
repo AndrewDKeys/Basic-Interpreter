@@ -39,6 +39,18 @@ public class Interpreter {
         intMap = new HashMap<String, Integer>();
         floatMap = new HashMap<String, Float>();
         stringMap = new HashMap<String, String>();
+        statementStack = new Stack<StatementNode>();
+        walkNext();
+    }
+
+    //Makes sure every statement node has a next
+    private void walkNext() {
+        StatementNode current = (StatementNode) statementList.getList().get(0);
+        for(int i = 1; i < statementList.getList().size(); i++) {
+            current.setNext((StatementNode) statementList.getList().get(i));
+            current = current.next();
+        }
+        current.setNext(null); //makes sure the linked list is terminated with null
     }
 
     //Walks the tree until a data statement is found, can return empty queue if none are used
@@ -88,7 +100,7 @@ public class Interpreter {
             if(((FunctionNode) node).getFunctionName().equals("random")) { //this is the only function that can return an integer
                 return random();
             } else if(((FunctionNode) node).getFunctionName().equals("val")) {
-                Node params = ((FunctionNode) node).getParameters().getFirst();
+                Node params = ((FunctionNode) node).getParameters().get(0);
                 return intVal(evaluateString(params));
             } else {
                 throw new RuntimeException("Invalid integer variable assignment");
@@ -120,7 +132,7 @@ public class Interpreter {
             }
         } else if (node instanceof FunctionNode) {
             if(((FunctionNode) node).getFunctionName().equals("val%")) { //val% is the only built-in that returns a float
-                Node params = ((FunctionNode) node).getParameters().getFirst();
+                Node params = ((FunctionNode) node).getParameters().get(0);
                 return floatVal(evaluateString(params));
             } else {
                 throw new RuntimeException("Invalid float variable assignment");
@@ -149,9 +161,9 @@ public class Interpreter {
                 return mid(evaluateString(params.get(0)), evaluateInt(params.get(1)), evaluateInt(params.get(2)));
             } else if(((FunctionNode) node).getFunctionName().equals("num$")) {
                 try {
-                    return num(evaluateInt(params.getFirst())); //trys to see if it wants to convert an int
+                    return num(evaluateInt(params.get(0))); //trys to see if it wants to convert an int
                 } catch(Exception e) {
-                    return num(evaluateFloat(params.getFirst())); //else they would want to convert a float
+                    return num(evaluateFloat(params.get(0))); //else they would want to convert a float
                 }
             } else {
                 throw new RuntimeException("Invalid string variable assignment");
@@ -180,7 +192,6 @@ public class Interpreter {
             Node data = dataQueue.remove(); //removes the first inputted element in queue style
             if(data instanceof IntegerNode) {
                 if(evaluateVariableType(readList.get(i)).equals("int")) { //checks to see if read variable is the correct type
-
                     intMap.put(readList.get(i).toString(), evaluateInt(data));
                 } else {
                     throw new RuntimeException("Mismatched types in READ list");
@@ -199,6 +210,7 @@ public class Interpreter {
                 }
             }
         }
+        statementStack.push(node);
     }
 
     private void evaluateAssignment(AssignmentNode node) {
@@ -210,6 +222,7 @@ public class Interpreter {
         } else {
             stringMap.put(node.getVariable().toString(), evaluateString(node.getExpression())); //updating or adding the variable
         }
+        statementStack.push(node);
     }
 
     private void evaluateInput(InputNode node) {
@@ -242,6 +255,7 @@ public class Interpreter {
                throw new RuntimeException("Invalid input variables");
            }
         }
+        statementStack.push(node);
     }
 
     private void evaluatePrint(PrintNode node) {
@@ -263,6 +277,31 @@ public class Interpreter {
                 }
             }
         }
+        statementStack.push(node);
+    }
+
+    private void evaluateIf(IfNode node) {
+
+    }
+
+    private void evaluateFor(ForNode node) {
+
+    }
+
+    private void evaluateGosub(GosubNode node) {
+
+    }
+
+    private void evaluateReturn(ReturnNode node) {
+
+    }
+
+    private void evaluateNext(NextNode node) {
+
+    }
+
+    private void evaluateBoolean(BooleanNode node) {
+
     }
 
     //interprets the current statement
@@ -275,13 +314,29 @@ public class Interpreter {
             evaluateInput((InputNode) node);
         } else if(node instanceof PrintNode) {
             evaluatePrint((PrintNode) node);
+        } else if(node instanceof IfNode) {
+            evaluateIf((IfNode) node);
+        } else if(node instanceof ForNode) {
+            evaluateFor((ForNode) node);
+        } else if(node instanceof GosubNode) {
+            evaluateGosub((GosubNode) node);
+        } else if(node instanceof ReturnNode) {
+            evaluateReturn((ReturnNode) node);
+        } else if(node instanceof NextNode) {
+            evaluateNext((NextNode) node);
+        } else if(node instanceof EndNode) {
+            end = true;
+        } else {
+            throw new RuntimeException("Unexpected statement");
         }
     }
 
     //runs the code
     public void run() {
+        currentStatement = (StatementNode) statementList.getList().getFirst();
         while(!end) {
-
+            interpret(currentStatement);
+            currentStatement = currentStatement.next();
         }
     }
 

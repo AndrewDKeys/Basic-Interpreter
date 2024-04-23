@@ -8,6 +8,8 @@ public class ForNode extends StatementNode {
 
     private final AssignmentNode initialize;
 
+    private StatementNode next;
+
     public ForNode(int increment, AssignmentNode initialize, int end) {
         this.increment = increment;
         this.initialize = initialize;
@@ -20,6 +22,14 @@ public class ForNode extends StatementNode {
 
     public int getEnd() {
         return end;
+    }
+
+    public void setNext(StatementNode next) {
+        this.next = next;
+    }
+
+    public StatementNode next() {
+        return next;
     }
 
     @Override
